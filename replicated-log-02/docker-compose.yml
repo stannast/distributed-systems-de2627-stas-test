@@ -1,0 +1,38 @@
+services:
+  follower1:
+    build: 
+      context: .
+      dockerfile: Dockerfile_follower
+    command: ["uvicorn", "follower.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8001:8000"
+    environment:
+      - MASTER_FOLLOWER_TOKEN=fake-secret-token
+  follower2:
+    build: 
+      context: .
+      dockerfile: Dockerfile_follower
+    command: ["uvicorn", "follower.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8002:8000"
+    environment:
+      - MASTER_FOLLOWER_TOKEN=fake-secret-token
+      - REPLICATION_DELAY=10.0
+  master:
+    build: 
+      context: .
+      dockerfile: Dockerfile_master
+    command: ["uvicorn", "master.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    environment:
+      - MASTER_FOLLOWER_TOKEN=fake-secret-token
+      - FOLLOWERS=http://follower1:8000,http://follower2:8000
+    depends_on:
+      - follower1
+      - follower2
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile_tests
+    profiles: ["tests"]
